@@ -1,7 +1,8 @@
 from src.constants.http_status import HTTP_201_CREATED, HTTP_400_BAD_REQUEST, HTTP_409_CONFLICT
 from flask import Blueprint, jsonify, request
 from src.db import User, db
-from src.services import identify_zipcode
+from src.apps.models.auth_model import user_exists_by_email, save_user
+from src.services import zipcode_services
 import validators
 
 auth = Blueprint("auth", __name__, url_prefix="/api/v1/auth")
@@ -18,7 +19,7 @@ def register():
     if not validators.email(email):
         return jsonify({'error': "Email is not valid"}), HTTP_400_BAD_REQUEST
 
-    if User.query.filter_by(email=email).first() is not None:
+    if user_exists_by_email(email):
         return jsonify({'error': "Email already exits"}), HTTP_409_CONFLICT
 
     if firstname is None:
@@ -36,11 +37,9 @@ def register():
     if len(zipcode) != 5:
         return jsonify({'error': "Zip Code is not valid, a 5 digits zip code is required"}), HTTP_400_BAD_REQUEST
 
-    user = User(email=email, firstname=firstname, middlename=middlename, lastname=lastname, zipcode=zipcode)
-    db.session.add(user)
-    db.session.commit()
-
-    identify_zipcode.identify_zipcode(user)
+    
+    user = save_user(email, firstname, middlename, lastname, zipcode)
+    zipcode_services.identify_zipcode(user)
 
     return jsonify({
         'message': "User created",
