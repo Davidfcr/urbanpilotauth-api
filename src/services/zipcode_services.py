@@ -1,4 +1,4 @@
-from src.db import User, db
+from src.db import User, ZipCodesRatings, db
 import csv
 import os
 
@@ -14,4 +14,3 @@ def identify_zipcode(user):
                 user.city = line[1]
                 user.state = line[2]
                 db.session.commit()
-
